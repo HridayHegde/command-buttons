@@ -14,7 +14,7 @@ A convenient Minecraft Fabric mod that adds quick-access command buttons to your
 
 ## Features
 
-CommandButtons adds 6 convenient buttons to the top-left corner of your inventory screen:
+CommandButtons adds 6 convenient square buttons horizontally across the top-left corner of your inventory screen:
 
 - **🎮 GameMode** - Toggle between Creative and Survival modes
 - **🌧️ Rain** - Toggle weather between clear and rainy
@@ -25,9 +25,24 @@ CommandButtons adds 6 convenient buttons to the top-left corner of your inventor
 
 ### Screenshots
 
-The mod works seamlessly in both game modes:
-- **Survival Mode**: Buttons appear as clickable widgets
-- **Creative Mode**: Buttons integrate cleanly with the creative inventory
+The mod works seamlessly in both game modes with the new horizontal icon-based design:
+- **Survival Mode**: 6 square buttons with custom icons arranged horizontally
+- **Creative Mode**: Same clean icon buttons that integrate perfectly with the creative inventory
+
+### Custom Icons & Tooltips
+
+The buttons now support **16x16 pixel custom icons** with helpful tooltips:
+- **Beautiful icons**: Custom pixel-art icons that match Minecraft's aesthetic
+- **Helpful tooltips**: Hover over any button to see what it does
+- **Minecraft-style**: Icons are rendered at the perfect size for the square button design
+- **Horizontal layout**: Buttons are now arranged horizontally for better space usage
+- **User-friendly**: Even with custom icons, tooltips make functionality clear
+
+**Icon Requirements:**
+- Format: PNG with transparency support
+- Size: 16x16 pixels
+- Style: Pixel art
+- Location: `src/main/resources/assets/commandbuttons/textures/gui/buttons/`
 
 ## Installation
 
@@ -41,13 +56,13 @@ The mod works seamlessly in both game modes:
 1. **Download**: Get the latest release from the [**📥 Releases Page**](../../releases)
 2. **Install**: Place the `.jar` file in your Minecraft `mods` folder
 3. **Launch**: Start Minecraft with the Fabric profile
-4. **Enjoy**: Open your inventory (E key) to see the buttons in the top-left corner!
+4. **Enjoy**: Open your inventory (E key) to see the 6 square buttons arranged horizontally in the top-left corner!
 
 > 💡 **Tip**: Look for the latest release with the green "Latest" tag for the most stable version.
 
 ## Usage
 
-Simply open your inventory and click the buttons in the top-left corner. The buttons work in both Survival and Creative modes:
+Simply open your inventory and click the buttons in the top-left corner. **Hover over any button to see a tooltip** explaining what it does. The buttons work in both Survival and Creative modes:
 
 - **Single Player**: Commands execute immediately
 - **Multiplayer**: Requires operator permissions for most commands

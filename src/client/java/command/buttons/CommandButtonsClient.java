@@ -13,9 +13,8 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
 
 public class CommandButtonsClient implements ClientModInitializer {
-	private static final int BUTTON_WIDTH = 70;
-	private static final int BUTTON_HEIGHT = 20;
-	private static final int BUTTON_SPACING = 5;
+	private static final int BUTTON_SIZE = 20; // Square buttons
+	private static final int BUTTON_SPACING = 2;
 	private static final int START_X = 5;
 	private static final int START_Y = 5;
 	
@@ -61,7 +60,7 @@ public class CommandButtonsClient implements ClientModInitializer {
 			}
 		});
 		
-		// Register custom rendering for survival mode only
+						// Register custom rendering for survival mode only
 		// Creative mode uses CreativeInventoryScreenMixin
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
 			if (screen instanceof InventoryScreen && !(screen instanceof CreativeInventoryScreen)) {
@@ -73,6 +72,7 @@ public class CommandButtonsClient implements ClientModInitializer {
 							net.minecraft.world.GameMode gameMode = client.interactionManager.getCurrentGameMode();
 							if (gameMode != net.minecraft.world.GameMode.CREATIVE) {
 								renderSurvivalButtons(drawContext);
+								renderSurvivalTooltips(drawContext, mouseX, mouseY);
 							}
 						}
 					}
@@ -85,19 +85,19 @@ public class CommandButtonsClient implements ClientModInitializer {
 	
 	private void addButtonsToInventory(InventoryScreen screen) {
 		try {
-			CommandButtons.LOGGER.info("CommandButtons: Starting to add buttons to survival inventory screen...");
+			CommandButtons.LOGGER.info("CommandButtons: Starting to add horizontal buttons to survival inventory screen...");
 			
-			// Create main buttons
+			// Create horizontal buttons (changed from vertical to horizontal layout)
 			addButtonToScreen(screen, "GameMode", START_X, START_Y, command.buttons.util.CommandExecutor::executeGameModeToggle);
-			addButtonToScreen(screen, "Rain", START_X, START_Y + (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeRainToggle);
-			addButtonToScreen(screen, "Heal", START_X, START_Y + 2 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeHeal);
-			addButtonToScreen(screen, "Morning", START_X, START_Y + 3 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeMorning);
-			addButtonToScreen(screen, "Midnight", START_X, START_Y + 4 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeMidnight);
-			addButtonToScreen(screen, "Afternoon", START_X, START_Y + 5 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeAfternoon);
+			addButtonToScreen(screen, "Rain", START_X + (BUTTON_SIZE + BUTTON_SPACING), START_Y, command.buttons.util.CommandExecutor::executeRainToggle);
+			addButtonToScreen(screen, "Heal", START_X + 2 * (BUTTON_SIZE + BUTTON_SPACING), START_Y, command.buttons.util.CommandExecutor::executeHeal);
+			addButtonToScreen(screen, "Morning", START_X + 3 * (BUTTON_SIZE + BUTTON_SPACING), START_Y, command.buttons.util.CommandExecutor::executeSetTimeMorning);
+			addButtonToScreen(screen, "Midnight", START_X + 4 * (BUTTON_SIZE + BUTTON_SPACING), START_Y, command.buttons.util.CommandExecutor::executeSetTimeMidnight);
+			addButtonToScreen(screen, "Afternoon", START_X + 5 * (BUTTON_SIZE + BUTTON_SPACING), START_Y, command.buttons.util.CommandExecutor::executeSetTimeAfternoon);
 			
-			CommandButtons.LOGGER.info("CommandButtons: Successfully added all buttons to survival inventory!");
+			CommandButtons.LOGGER.info("CommandButtons: Successfully added all horizontal buttons to survival inventory!");
 		} catch (Exception e) {
-			CommandButtons.LOGGER.error("CommandButtons: Error adding buttons to survival inventory", e);
+			CommandButtons.LOGGER.error("CommandButtons: Error adding horizontal buttons to survival inventory", e);
 		}
 	}
 	
@@ -106,11 +106,12 @@ public class CommandButtonsClient implements ClientModInitializer {
 	
 	private void addButtonToScreen(Object screenObj, String text, int x, int y, Runnable action) {
 		try {
-			ButtonWidget button = ButtonWidget.builder(Text.literal(text), (btn) -> {
+			// Create button with empty text since we're rendering icons manually
+			ButtonWidget button = ButtonWidget.builder(Text.literal(""), (btn) -> {
 				CommandButtons.LOGGER.info("CommandButtons: Button '{}' clicked!", text);
 				action.run();
 			})
-			.dimensions(x, y, BUTTON_WIDTH, BUTTON_HEIGHT)
+			.dimensions(x, y, BUTTON_SIZE, BUTTON_SIZE)
 			.build();
 			
 			// Try multiple approaches to add the button
@@ -154,38 +155,76 @@ public class CommandButtonsClient implements ClientModInitializer {
 		MinecraftClient client = MinecraftClient.getInstance();
 		
 		try {
-			// Draw custom buttons directly on the screen
-			int x = START_X;
-			int y = START_Y;
+			// Button data for horizontal layout - icons only, no fallback
+			String[] buttonNames = {"gamemode", "rain", "heal", "morning", "midnight", "afternoon"};
 			
-			// Button backgrounds and text - only the main 6 buttons
-			String[] buttonTexts = {"GameMode", "Rain", "Heal", "Morning", "Midnight", "Afternoon"};
-			
-			for (int i = 0; i < buttonTexts.length; i++) {
-				int buttonX = x;
-				int buttonY = y + i * (BUTTON_HEIGHT + BUTTON_SPACING);
+			for (int i = 0; i < buttonNames.length; i++) {
+				int buttonX = START_X + i * (BUTTON_SIZE + BUTTON_SPACING);
+				int buttonY = START_Y;
 				
-				// Draw button background with Minecraft-style appearance
+				// Draw button background with Minecraft-style appearance (square)
 				// Dark border
-				drawContext.fill(buttonX, buttonY, buttonX + BUTTON_WIDTH, buttonY + BUTTON_HEIGHT, 0xFF000000);
+				drawContext.fill(buttonX, buttonY, buttonX + BUTTON_SIZE, buttonY + BUTTON_SIZE, 0xFF000000);
 				// Main button background
-				drawContext.fill(buttonX + 1, buttonY + 1, buttonX + BUTTON_WIDTH - 1, buttonY + BUTTON_HEIGHT - 1, 0xFFC0C0C0);
+				drawContext.fill(buttonX + 1, buttonY + 1, buttonX + BUTTON_SIZE - 1, buttonY + BUTTON_SIZE - 1, 0xFFC0C0C0);
 				// Top/left highlight (3D effect)
-				drawContext.fill(buttonX + 1, buttonY + 1, buttonX + BUTTON_WIDTH - 1, buttonY + 2, 0xFFFFFFFF);
-				drawContext.fill(buttonX + 1, buttonY + 1, buttonX + 2, buttonY + BUTTON_HEIGHT - 1, 0xFFFFFFFF);
+				drawContext.fill(buttonX + 1, buttonY + 1, buttonX + BUTTON_SIZE - 1, buttonY + 2, 0xFFFFFFFF);
+				drawContext.fill(buttonX + 1, buttonY + 1, buttonX + 2, buttonY + BUTTON_SIZE - 1, 0xFFFFFFFF);
 				// Bottom/right shadow (3D effect)  
-				drawContext.fill(buttonX + 1, buttonY + BUTTON_HEIGHT - 2, buttonX + BUTTON_WIDTH - 1, buttonY + BUTTON_HEIGHT - 1, 0xFF808080);
-				drawContext.fill(buttonX + BUTTON_WIDTH - 2, buttonY + 1, buttonX + BUTTON_WIDTH - 1, buttonY + BUTTON_HEIGHT - 1, 0xFF808080);
+				drawContext.fill(buttonX + 1, buttonY + BUTTON_SIZE - 2, buttonX + BUTTON_SIZE - 1, buttonY + BUTTON_SIZE - 1, 0xFF808080);
+				drawContext.fill(buttonX + BUTTON_SIZE - 2, buttonY + 1, buttonX + BUTTON_SIZE - 1, buttonY + BUTTON_SIZE - 1, 0xFF808080);
 				
-				// Draw button text (centered)
-				int textWidth = client.textRenderer.getWidth(buttonTexts[i]);
-				int textX = buttonX + (BUTTON_WIDTH - textWidth) / 2;
-				int textY = buttonY + (BUTTON_HEIGHT - 8) / 2;
-				drawContext.drawText(client.textRenderer, buttonTexts[i], textX, textY, 0x000000, false);
+				// Render icon (assume it always exists)
+				renderButtonIcon(drawContext, buttonNames[i], buttonX, buttonY);
 			}
 			
 		} catch (Exception e) {
 			CommandButtons.LOGGER.error("CommandButtons: Error rendering survival buttons", e);
+		}
+	}
+	
+	private static void renderButtonIcon(DrawContext drawContext, String iconName, int x, int y) {
+		try {
+			net.minecraft.util.Identifier iconId = new net.minecraft.util.Identifier("commandbuttons", "textures/gui/buttons/" + iconName + ".png");
+			
+			// Render the icon centered in the button
+			int iconSize = 16; // 16x16 pixel icons
+			int iconX = x + (BUTTON_SIZE - iconSize) / 2;
+			int iconY = y + (BUTTON_SIZE - iconSize) / 2;
+			
+			drawContext.drawTexture(iconId, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+		} catch (Exception e) {
+			CommandButtons.LOGGER.warn("CommandButtons: Failed to render icon for {}: {}", iconName, e.getMessage());
+		}
+	}
+	
+	private static void renderSurvivalTooltips(DrawContext drawContext, int mouseX, int mouseY) {
+		MinecraftClient client = MinecraftClient.getInstance();
+		
+		// Button data
+		String[] buttonNames = {"gamemode", "rain", "heal", "morning", "midnight", "afternoon"};
+		String[] tooltips = {
+			"Toggle Game Mode",
+			"Toggle Weather", 
+			"Heal to Full Health",
+			"Set Time to Morning",
+			"Set Time to Midnight",
+			"Set Time to Afternoon"
+		};
+		
+		// Check if mouse is hovering over any button
+		for (int i = 0; i < buttonNames.length; i++) {
+			int buttonX = START_X + i * (BUTTON_SIZE + BUTTON_SPACING);
+			int buttonY = START_Y;
+			
+			// Check if mouse is within button bounds
+			if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_SIZE && 
+				mouseY >= buttonY && mouseY <= buttonY + BUTTON_SIZE) {
+				
+				// Render tooltip
+				drawContext.drawTooltip(client.textRenderer, Text.literal(tooltips[i]), mouseX, mouseY);
+				break; // Only show one tooltip at a time
+			}
 		}
 	}
 }

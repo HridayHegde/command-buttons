@@ -25,6 +25,7 @@ public class CreativeInventoryScreenMixin {
                 if (gameMode == net.minecraft.world.GameMode.CREATIVE) {
                     CommandButtons.LOGGER.info("CommandButtons: Rendering creative buttons via render method");
                     renderButtons(context);
+                    renderTooltips(context, mouseX, mouseY);
                 }
             }
         } catch (Exception e) {
@@ -49,22 +50,21 @@ public class CreativeInventoryScreenMixin {
     }
     
     private boolean handleButtonClick(int mouseX, int mouseY) {
-        // Button configuration
-        int BUTTON_WIDTH = 70;
-        int BUTTON_HEIGHT = 20;
-        int BUTTON_SPACING = 5;
+        // Button configuration (horizontal layout)
+        int BUTTON_SIZE = 20; // Square buttons
+        int BUTTON_SPACING = 2;
         int START_X = 5;
         int START_Y = 5;
         
         String[] buttonTexts = {"GameMode", "Rain", "Heal", "Morning", "Midnight", "Afternoon"};
         
         for (int i = 0; i < buttonTexts.length; i++) {
-            int buttonX = START_X;
-            int buttonY = START_Y + i * (BUTTON_HEIGHT + BUTTON_SPACING);
+            int buttonX = START_X + i * (BUTTON_SIZE + BUTTON_SPACING);
+            int buttonY = START_Y;
             
             // Check if click is within this button's bounds
-            if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH && 
-                mouseY >= buttonY && mouseY <= buttonY + BUTTON_HEIGHT) {
+            if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_SIZE && 
+                mouseY >= buttonY && mouseY <= buttonY + BUTTON_SIZE) {
                 
                 CommandButtons.LOGGER.info("CommandButtons: Creative button '{}' clicked!", buttonTexts[i]);
                 executeCreativeCommand(buttonTexts[i]);
@@ -100,36 +100,83 @@ public class CreativeInventoryScreenMixin {
     private void renderButtons(DrawContext drawContext) {
         MinecraftClient client = MinecraftClient.getInstance();
         
-        // Button configuration
-        int BUTTON_WIDTH = 70;
-        int BUTTON_HEIGHT = 20;
-        int BUTTON_SPACING = 5;
+        // Button configuration (horizontal layout)
+        int BUTTON_SIZE = 20; // Square buttons
+        int BUTTON_SPACING = 2;
         int START_X = 5;
         int START_Y = 5;
         
-        String[] buttonTexts = {"GameMode", "Rain", "Heal", "Morning", "Midnight", "Afternoon"};
+        String[] buttonNames = {"gamemode", "rain", "heal", "morning", "midnight", "afternoon"};
         
-        for (int i = 0; i < buttonTexts.length; i++) {
-            int buttonX = START_X;
-            int buttonY = START_Y + i * (BUTTON_HEIGHT + BUTTON_SPACING);
+        for (int i = 0; i < buttonNames.length; i++) {
+            int buttonX = START_X + i * (BUTTON_SIZE + BUTTON_SPACING);
+            int buttonY = START_Y;
             
-            // Draw button background with Minecraft-style appearance (same as survival)
+            // Draw button background with Minecraft-style appearance (square)
             // Dark border
-            drawContext.fill(buttonX, buttonY, buttonX + BUTTON_WIDTH, buttonY + BUTTON_HEIGHT, 0xFF000000);
+            drawContext.fill(buttonX, buttonY, buttonX + BUTTON_SIZE, buttonY + BUTTON_SIZE, 0xFF000000);
             // Main button background
-            drawContext.fill(buttonX + 1, buttonY + 1, buttonX + BUTTON_WIDTH - 1, buttonY + BUTTON_HEIGHT - 1, 0xFFC0C0C0);
+            drawContext.fill(buttonX + 1, buttonY + 1, buttonX + BUTTON_SIZE - 1, buttonY + BUTTON_SIZE - 1, 0xFFC0C0C0);
             // Top/left highlight (3D effect)
-            drawContext.fill(buttonX + 1, buttonY + 1, buttonX + BUTTON_WIDTH - 1, buttonY + 2, 0xFFFFFFFF);
-            drawContext.fill(buttonX + 1, buttonY + 1, buttonX + 2, buttonY + BUTTON_HEIGHT - 1, 0xFFFFFFFF);
+            drawContext.fill(buttonX + 1, buttonY + 1, buttonX + BUTTON_SIZE - 1, buttonY + 2, 0xFFFFFFFF);
+            drawContext.fill(buttonX + 1, buttonY + 1, buttonX + 2, buttonY + BUTTON_SIZE - 1, 0xFFFFFFFF);
             // Bottom/right shadow (3D effect)  
-            drawContext.fill(buttonX + 1, buttonY + BUTTON_HEIGHT - 2, buttonX + BUTTON_WIDTH - 1, buttonY + BUTTON_HEIGHT - 1, 0xFF808080);
-            drawContext.fill(buttonX + BUTTON_WIDTH - 2, buttonY + 1, buttonX + BUTTON_WIDTH - 1, buttonY + BUTTON_HEIGHT - 1, 0xFF808080);
+            drawContext.fill(buttonX + 1, buttonY + BUTTON_SIZE - 2, buttonX + BUTTON_SIZE - 1, buttonY + BUTTON_SIZE - 1, 0xFF808080);
+            drawContext.fill(buttonX + BUTTON_SIZE - 2, buttonY + 1, buttonX + BUTTON_SIZE - 1, buttonY + BUTTON_SIZE - 1, 0xFF808080);
             
-            // Draw button text (centered)
-            int textWidth = client.textRenderer.getWidth(buttonTexts[i]);
-            int textX = buttonX + (BUTTON_WIDTH - textWidth) / 2;
-            int textY = buttonY + (BUTTON_HEIGHT - 8) / 2;
-            drawContext.drawText(client.textRenderer, buttonTexts[i], textX, textY, 0x000000, false);
+            // Render icon (assume it always exists)
+            renderButtonIcon(drawContext, buttonNames[i], buttonX, buttonY);
+        }
+    }
+    
+    private void renderButtonIcon(DrawContext drawContext, String iconName, int x, int y) {
+        try {
+            net.minecraft.util.Identifier iconId = new net.minecraft.util.Identifier("commandbuttons", "textures/gui/buttons/" + iconName + ".png");
+            
+            // Render the icon centered in the button
+            int iconSize = 16; // 16x16 pixel icons
+            int iconX = x + (20 - iconSize) / 2; // Center in 20x20 button
+            int iconY = y + (20 - iconSize) / 2;
+            
+            drawContext.drawTexture(iconId, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+        } catch (Exception e) {
+            CommandButtons.LOGGER.warn("CommandButtons: Failed to render creative icon for {}: {}", iconName, e.getMessage());
+        }
+    }
+    
+    private void renderTooltips(DrawContext drawContext, int mouseX, int mouseY) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        
+        // Button configuration
+        int BUTTON_SIZE = 20;
+        int BUTTON_SPACING = 2;
+        int START_X = 5;
+        int START_Y = 5;
+        
+        // Button data
+        String[] buttonNames = {"gamemode", "rain", "heal", "morning", "midnight", "afternoon"};
+        String[] tooltips = {
+            "Toggle Game Mode",
+            "Toggle Weather", 
+            "Heal to Full Health",
+            "Set Time to Morning",
+            "Set Time to Midnight",
+            "Set Time to Afternoon"
+        };
+        
+        // Check if mouse is hovering over any button
+        for (int i = 0; i < buttonNames.length; i++) {
+            int buttonX = START_X + i * (BUTTON_SIZE + BUTTON_SPACING);
+            int buttonY = START_Y;
+            
+            // Check if mouse is within button bounds
+            if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_SIZE && 
+                mouseY >= buttonY && mouseY <= buttonY + BUTTON_SIZE) {
+                
+                // Render tooltip
+                drawContext.drawTooltip(client.textRenderer, net.minecraft.text.Text.literal(tooltips[i]), mouseX, mouseY);
+                break; // Only show one tooltip at a time
+            }
         }
     }
 }
