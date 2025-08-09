@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
@@ -18,10 +19,9 @@ public class CommandButtonsClient implements ClientModInitializer {
 	private static final int START_X = 5;
 	private static final int START_Y = 5;
 	
-	// Custom button rendering approach
+	// Inventory tracking for button functionality
 	private static boolean isInventoryOpen = false;
 	private static InventoryScreen currentInventoryScreen = null;
-	private static long lastRenderTime = 0;
 
 	@Override
 	public void onInitializeClient() {
@@ -30,43 +30,53 @@ public class CommandButtonsClient implements ClientModInitializer {
 		
 		// Register screen event to add buttons when inventory screen opens
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-			if (screen instanceof InventoryScreen) {
-				CommandButtons.LOGGER.info("CommandButtons: InventoryScreen detected via ScreenEvents.AFTER_INIT!");
+			// Debug: Log all screen types to see what creative mode uses
+			CommandButtons.LOGGER.info("CommandButtons: Screen opened: {} (class: {})", 
+				screen.getTitle().getString(), screen.getClass().getSimpleName());
+			
+			if (screen instanceof InventoryScreen && !(screen instanceof CreativeInventoryScreen)) {
+				// Only for survival/adventure inventory, not creative
+				CommandButtons.LOGGER.info("CommandButtons: Survival InventoryScreen detected via ScreenEvents.AFTER_INIT!");
 				CommandButtons.LOGGER.info("CommandButtons: Screen dimensions: {}x{}", scaledWidth, scaledHeight);
 				isInventoryOpen = true;
 				currentInventoryScreen = (InventoryScreen) screen;
 				addButtonsToInventory((InventoryScreen) screen);
+			} else if (screen instanceof CreativeInventoryScreen) {
+				// For creative mode, we only track but DON'T create invisible buttons
+				// The mixin handles everything for creative mode
+				CommandButtons.LOGGER.info("CommandButtons: CreativeInventoryScreen detected - using mixin only (no invisible buttons)");
+				CommandButtons.LOGGER.info("CommandButtons: Screen dimensions: {}x{}", scaledWidth, scaledHeight);
+				isInventoryOpen = true;
+				// Don't call addButtonsToCreativeInventory - this was causing the duplicates!
 			}
 		});
 		
 		// Register screen close event
 		ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
 			// Reset if opening a different screen
-			if (!(screen instanceof InventoryScreen) && isInventoryOpen) {
+			if (!(screen instanceof InventoryScreen) && !(screen instanceof CreativeInventoryScreen) && isInventoryOpen) {
 				CommandButtons.LOGGER.info("CommandButtons: Non-inventory screen opened, closing inventory tracking");
 				isInventoryOpen = false;
 				currentInventoryScreen = null;
 			}
 		});
 		
-		// Register custom rendering for our buttons - try multiple approaches
+		// Register custom rendering for survival mode only
+		// Creative mode uses CreativeInventoryScreenMixin
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-			if (screen instanceof InventoryScreen) {
-				// Add a render callback specifically for this screen
+			if (screen instanceof InventoryScreen && !(screen instanceof CreativeInventoryScreen)) {
+				// Add a render callback specifically for survival inventory screen
 				ScreenEvents.afterRender(screen).register((screen2, drawContext, mouseX, mouseY, tickDelta) -> {
 					if (screen2 == currentInventoryScreen && isInventoryOpen) {
-						renderCustomButtons(drawContext);
+						// Only render in survival/adventure mode, not creative
+						if (client.player != null) {
+							net.minecraft.world.GameMode gameMode = client.interactionManager.getCurrentGameMode();
+							if (gameMode != net.minecraft.world.GameMode.CREATIVE) {
+								renderSurvivalButtons(drawContext);
+							}
+						}
 					}
 				});
-			}
-		});
-		
-		// Also try HUD rendering as backup for creative mode
-		HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
-			MinecraftClient client = MinecraftClient.getInstance();
-			if (isInventoryOpen && currentInventoryScreen != null && 
-				client.currentScreen == currentInventoryScreen) {
-				renderCustomButtons(drawContext);
 			}
 		});
 		
@@ -75,23 +85,26 @@ public class CommandButtonsClient implements ClientModInitializer {
 	
 	private void addButtonsToInventory(InventoryScreen screen) {
 		try {
-			CommandButtons.LOGGER.info("CommandButtons: Starting to add buttons to inventory screen...");
+			CommandButtons.LOGGER.info("CommandButtons: Starting to add buttons to survival inventory screen...");
 			
 			// Create main buttons
-			addButton(screen, "GameMode", START_X, START_Y, command.buttons.util.CommandExecutor::executeGameModeToggle);
-			addButton(screen, "Rain", START_X, START_Y + (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeRainToggle);
-			addButton(screen, "Heal", START_X, START_Y + 2 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeHeal);
-			addButton(screen, "Morning", START_X, START_Y + 3 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeMorning);
-			addButton(screen, "Midnight", START_X, START_Y + 4 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeMidnight);
-			addButton(screen, "Afternoon", START_X, START_Y + 5 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeAfternoon);
+			addButtonToScreen(screen, "GameMode", START_X, START_Y, command.buttons.util.CommandExecutor::executeGameModeToggle);
+			addButtonToScreen(screen, "Rain", START_X, START_Y + (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeRainToggle);
+			addButtonToScreen(screen, "Heal", START_X, START_Y + 2 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeHeal);
+			addButtonToScreen(screen, "Morning", START_X, START_Y + 3 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeMorning);
+			addButtonToScreen(screen, "Midnight", START_X, START_Y + 4 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeMidnight);
+			addButtonToScreen(screen, "Afternoon", START_X, START_Y + 5 * (BUTTON_HEIGHT + BUTTON_SPACING), command.buttons.util.CommandExecutor::executeSetTimeAfternoon);
 			
-			CommandButtons.LOGGER.info("CommandButtons: Successfully added all buttons to inventory!");
+			CommandButtons.LOGGER.info("CommandButtons: Successfully added all buttons to survival inventory!");
 		} catch (Exception e) {
-			CommandButtons.LOGGER.error("CommandButtons: Error adding buttons to inventory", e);
+			CommandButtons.LOGGER.error("CommandButtons: Error adding buttons to survival inventory", e);
 		}
 	}
 	
-	private void addButton(InventoryScreen screen, String text, int x, int y, Runnable action) {
+	// Note: Creative inventory buttons are handled entirely by CreativeInventoryScreenMixin
+	// No invisible buttons are created for creative mode to prevent duplicates
+	
+	private void addButtonToScreen(Object screenObj, String text, int x, int y, Runnable action) {
 		try {
 			ButtonWidget button = ButtonWidget.builder(Text.literal(text), (btn) -> {
 				CommandButtons.LOGGER.info("CommandButtons: Button '{}' clicked!", text);
@@ -103,11 +116,14 @@ public class CommandButtonsClient implements ClientModInitializer {
 			// Try multiple approaches to add the button
 			boolean success = false;
 			
-			// Approach 1: Use Fabric's Screens API
+			// Approach 1: Use Fabric's Screens API (cast to Screen first)
 			try {
-				Screens.getButtons(screen).add(button);
-				CommandButtons.LOGGER.info("CommandButtons: Added button '{}' at ({}, {}) using Screens API", text, x, y);
-				success = true;
+				if (screenObj instanceof net.minecraft.client.gui.screen.Screen) {
+					net.minecraft.client.gui.screen.Screen screen = (net.minecraft.client.gui.screen.Screen) screenObj;
+					Screens.getButtons(screen).add(button);
+					CommandButtons.LOGGER.info("CommandButtons: Added button '{}' at ({}, {}) using Screens API", text, x, y);
+					success = true;
+				}
 			} catch (Exception e1) {
 				CommandButtons.LOGGER.warn("CommandButtons: Screens API failed for button '{}': {}", text, e1.getMessage());
 			}
@@ -115,8 +131,8 @@ public class CommandButtonsClient implements ClientModInitializer {
 			// Approach 2: Try to use ScreenAccessor if Screens API failed
 			if (!success) {
 				try {
-					if (screen instanceof command.buttons.mixin.client.ScreenAccessor) {
-						((command.buttons.mixin.client.ScreenAccessor) screen).invokeAddDrawableChild(button);
+					if (screenObj instanceof command.buttons.mixin.client.ScreenAccessor) {
+						((command.buttons.mixin.client.ScreenAccessor) screenObj).invokeAddDrawableChild(button);
 						CommandButtons.LOGGER.info("CommandButtons: Added button '{}' at ({}, {}) using ScreenAccessor", text, x, y);
 						success = true;
 					}
@@ -134,18 +150,8 @@ public class CommandButtonsClient implements ClientModInitializer {
 		}
 	}
 	
-	private static void renderCustomButtons(DrawContext drawContext) {
+	private static void renderSurvivalButtons(DrawContext drawContext) {
 		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.currentScreen != currentInventoryScreen) {
-			return;
-		}
-		
-		// Prevent duplicate rendering within the same frame
-		long currentTime = System.currentTimeMillis();
-		if (currentTime - lastRenderTime < 50) { // 50ms cooldown
-			return;
-		}
-		lastRenderTime = currentTime;
 		
 		try {
 			// Draw custom buttons directly on the screen
@@ -179,7 +185,7 @@ public class CommandButtonsClient implements ClientModInitializer {
 			}
 			
 		} catch (Exception e) {
-			CommandButtons.LOGGER.error("CommandButtons: Error rendering custom buttons", e);
+			CommandButtons.LOGGER.error("CommandButtons: Error rendering survival buttons", e);
 		}
 	}
 }

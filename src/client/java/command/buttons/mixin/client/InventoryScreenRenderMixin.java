@@ -4,6 +4,8 @@ import command.buttons.CommandButtons;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
+import net.minecraft.world.GameMode;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,16 +14,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(InventoryScreen.class)
 public class InventoryScreenRenderMixin {
     
-    @Inject(method = "render", at = @At("TAIL"))
-    private void renderCommandButtons(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Inject(method = "drawForeground", at = @At("TAIL"), require = 0)
+    private void renderCommandButtonsForeground(DrawContext context, int mouseX, int mouseY, CallbackInfo ci) {
         try {
-            // Only render if this is the current screen
             MinecraftClient client = MinecraftClient.getInstance();
-            if (client.currentScreen == (Object) this) {
-                renderButtons(context);
+            
+            // Only render if NOT in creative mode and screen is regular InventoryScreen
+            if (client.player != null && client.currentScreen == (Object) this) {
+                GameMode gameMode = client.interactionManager.getCurrentGameMode();
+                
+                // Only render for survival/adventure mode, not creative
+                if (gameMode != GameMode.CREATIVE && !(client.currentScreen instanceof CreativeInventoryScreen)) {
+                    renderButtons(context);
+                }
             }
         } catch (Exception e) {
-            CommandButtons.LOGGER.error("CommandButtons: Error in render mixin", e);
+            CommandButtons.LOGGER.error("CommandButtons: Error in inventory foreground mixin", e);
         }
     }
     
