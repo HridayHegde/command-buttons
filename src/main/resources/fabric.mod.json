@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "commandbuttons",
+	"version": "${version}",
+	"name": "CommandButtons",
+	"description": "Adds convenient command buttons to the inventory screen for gamemode, weather, healing, and time control",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/commandbuttons/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"command.buttons.CommandButtons"
+		],
+		"client": [
+			"command.buttons.CommandButtonsClient"
+		]
+	},
+	"mixins": [
+		"commandbuttons.mixins.json",
+		{
+			"config": "commandbuttons.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.17.2",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}

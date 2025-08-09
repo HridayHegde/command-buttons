@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"package": "command.buttons.mixin.client",
+	"compatibilityLevel": "JAVA_17",
+	"client": [
+		"ExampleClientMixin",
+		"ScreenAccessor",
+		"InventoryScreenRenderMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
