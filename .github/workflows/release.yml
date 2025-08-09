@@ -1,0 +1,105 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # Required for creating releases
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+      
+    - name: Build with Gradle
+      run: ./gradlew build
+      
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+    - name: Find JAR file
+      id: find_jar
+      run: |
+        JAR_FILE=$(find build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-dev.jar" | head -n 1)
+        echo "JAR_PATH=$JAR_FILE" >> $GITHUB_OUTPUT
+        echo "JAR_NAME=$(basename $JAR_FILE)" >> $GITHUB_OUTPUT
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: CommandButtons v${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## CommandButtons v${{ steps.get_version.outputs.VERSION }}
+          
+          ### 🎮 What's New
+          - Updated for Minecraft 1.20.1
+          - Compatible with Fabric Loader 0.16.14+
+          - Six convenient command buttons in your inventory screen
+          
+          ### ✨ Features
+          - **GameMode**: Toggle between Survival/Creative/Adventure
+          - **Rain**: Toggle weather (rain/clear skies)
+          - **Heal**: Instantly heal to full health
+          - **Morning**: Set time to 6:00 AM (1000 ticks)
+          - **Midnight**: Set time to 12:00 AM (18000 ticks)
+          - **Afternoon**: Set time to 12:00 PM (6000 ticks)
+          
+          ### 📋 Requirements
+          - Minecraft 1.20.1
+          - Fabric Loader 0.16.14+
+          - Fabric API 0.92.6+1.20.1
+          - Java 17+
+          
+          ### 📥 Installation
+          1. Download the `.jar` file below
+          2. Place it in your `mods` folder
+          3. Launch Minecraft with Fabric
+          4. Open your inventory to see the buttons!
+          
+          ### 🌟 Like this mod?
+          **Please consider starring this repository!** ⭐
+          It helps others discover this mod and motivates continued development.
+          
+          ---
+          **Full Changelog**: https://github.com/HridayHegde/command-buttons/compare/v${{ steps.get_version.outputs.VERSION }}...HEAD
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ steps.find_jar.outputs.JAR_PATH }}
+        asset_name: ${{ steps.find_jar.outputs.JAR_NAME }}
+        asset_content_type: application/java-archive
