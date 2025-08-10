@@ -203,14 +203,14 @@ public class CommandButtonsClient implements ClientModInitializer {
 		
 		// Button data
 		String[] buttonNames = {"gamemode", "rain", "heal", "morning", "midnight", "afternoon"};
-		String[] tooltips = {
-			"Toggle Game Mode",
-			"Toggle Weather", 
-			"Heal to Full Health",
-			"Set Time to Morning",
-			"Set Time to Midnight",
-			"Set Time to Afternoon"
-		};
+		        String[] tooltips = {
+            "Toggle Game Mode",
+            "Toggle Weather", 
+            "Heal to Full Health",
+            "Go to Next Morning",
+            "Go to Next Midnight",
+            "Go to Next Afternoon"
+        };
 		
 		// Check if mouse is hovering over any button
 		for (int i = 0; i < buttonNames.length; i++) {

@@ -38,20 +38,56 @@ public class CommandExecutor {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
 
-        client.player.networkHandler.sendChatCommand("time set 1000");
+        // Get current time and calculate time to add to reach next morning (1000)
+        long currentTime = client.world.getTimeOfDay() % 24000;
+        long timeToAdd;
+        
+        if (currentTime < 1000) {
+            // Current time is before morning, add time to reach morning
+            timeToAdd = 1000 - currentTime;
+        } else {
+            // Current time is after morning, add time to reach next morning
+            timeToAdd = 24000 - currentTime + 1000;
+        }
+        
+        client.player.networkHandler.sendChatCommand("time add " + timeToAdd);
     }
 
     public static void executeSetTimeMidnight() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
 
-        client.player.networkHandler.sendChatCommand("time set 18000");
+        // Get current time and calculate time to add to reach next midnight (18000)
+        long currentTime = client.world.getTimeOfDay() % 24000;
+        long timeToAdd;
+        
+        if (currentTime < 18000) {
+            // Current time is before midnight, add time to reach midnight
+            timeToAdd = 18000 - currentTime;
+        } else {
+            // Current time is after midnight, add time to reach next midnight
+            timeToAdd = 24000 - currentTime + 18000;
+        }
+        
+        client.player.networkHandler.sendChatCommand("time add " + timeToAdd);
     }
 
     public static void executeSetTimeAfternoon() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
 
-        client.player.networkHandler.sendChatCommand("time set 6000");
+        // Get current time and calculate time to add to reach next afternoon (6000)
+        long currentTime = client.world.getTimeOfDay() % 24000;
+        long timeToAdd;
+        
+        if (currentTime < 6000) {
+            // Current time is before afternoon, add time to reach afternoon
+            timeToAdd = 6000 - currentTime;
+        } else {
+            // Current time is after afternoon, add time to reach next afternoon
+            timeToAdd = 24000 - currentTime + 6000;
+        }
+        
+        client.player.networkHandler.sendChatCommand("time add " + timeToAdd);
     }
 }

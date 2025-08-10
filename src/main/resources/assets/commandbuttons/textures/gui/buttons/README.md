@@ -20,13 +20,13 @@ This folder contains the icon textures for the CommandButtons mod.
 3. **`heal.png`** - Healing icon
    - Suggested design: Heart symbol or health potion
    
-4. **`morning.png`** - Set time to morning icon
+4. **`morning.png`** - Go to next morning icon
    - Suggested design: Rising sun or bright sun
    
-5. **`midnight.png`** - Set time to midnight icon
+5. **`midnight.png`** - Go to next midnight icon
    - Suggested design: Moon and stars or dark sky
    
-6. **`afternoon.png`** - Set time to afternoon icon
+6. **`afternoon.png`** - Go to next afternoon icon
    - Suggested design: High sun or partly cloudy sky
 
 ## 🎨 Design Guidelines

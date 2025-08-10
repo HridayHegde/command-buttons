@@ -159,9 +159,9 @@ public class CreativeInventoryScreenMixin {
             "Toggle Game Mode",
             "Toggle Weather", 
             "Heal to Full Health",
-            "Set Time to Morning",
-            "Set Time to Midnight",
-            "Set Time to Afternoon"
+            "Go to Next Morning",
+            "Go to Next Midnight",
+            "Go to Next Afternoon"
         };
         
         // Check if mouse is hovering over any button

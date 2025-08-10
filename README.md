@@ -19,9 +19,9 @@ CommandButtons adds 6 convenient square buttons horizontally across the top-left
 - **🎮 GameMode** - Toggle between Creative and Survival modes
 - **🌧️ Rain** - Toggle weather between clear and rainy
 - **❤️ Heal** - Instantly heal and restore hunger
-- **🌅 Morning** - Set time to morning (1000)
-- **🌙 Midnight** - Set time to midnight (18000)
-- **🌆 Afternoon** - Set time to afternoon (6000)
+- **🌅 Morning** - Go to next morning (1000)
+- **🌙 Midnight** - Go to next midnight (18000)
+- **🌆 Afternoon** - Go to next afternoon (6000)
 
 ### Screenshots
 
@@ -72,9 +72,9 @@ The mod executes these commands when buttons are clicked:
 - GameMode: `/gamemode creative` or `/gamemode survival`
 - Rain: `/weather rain` or `/weather clear`
 - Heal: `/effect give @s minecraft:instant_health 1 10` + `/effect give @s minecraft:saturation 1 10`
-- Morning: `/time set 1000`
-- Midnight: `/time set 18000`
-- Afternoon: `/time set 6000`
+- Morning: `/time add` (calculated to reach next morning)
+- Midnight: `/time add` (calculated to reach next midnight)
+- Afternoon: `/time add` (calculated to reach next afternoon)
 
 ## Development
 
